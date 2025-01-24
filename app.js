@@ -1,6 +1,11 @@
 //! load environment variables
 require("dotenv").config();
+const passport = require("passport");
+require("./middlewares/auth.js");
 const { default: helmet } = require("helmet");
+const session = require("express-session");
+const authRoutes = require("./routes/authRoutes.js");
+const userRoutes = require("./routes/userRoutes.js");
 
 const express = require("express");
 const app = express();
@@ -15,6 +20,23 @@ app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+//! Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: process.env.NODE_ENV === "production" },
+  })
+);
+//! authentication
+app.use(passport.initialize());
+app.use(passport.session());
+
+//! routes
+app.use("/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 //! Test Routes
 app.get("/", (req, res) => {

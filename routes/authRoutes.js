@@ -1,34 +1,27 @@
 const express = require("express");
-const passport = require("passport");
-const router = express.Router();
+const {
+  googleLogin,
+  googleCallback,
+  googleLogout,
+  findMe,
+  deleteMyAccount,
+} = require("../controllers/authController");
+const protect = require("../middlewares/authMiddleware");
+const authRouter = express.Router();
 
-//! Google Login
+//! google login
+authRouter.get("/google", googleLogin);
 
-router.get("/login", (req, res) => {
-  res.send("<a href='/auth/google'/>Google Login</a>");
-});
+//! google callback
+authRouter.get("/google/callback", googleCallback);
 
-//!  Google OAuth login route
-router.get(
-  "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
+//! google logout
+authRouter.get("/logout", googleLogout);
 
-//! // Google OAuth callback route
-router.get(
-  "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
-    res.redirect("/api/user/dashboard");
-  }
-);
+//! find me
+authRouter.get("/me", protect, findMe);
 
-//! Logout route
-router.get("/logout", (req, res) => {
-  req.logOut((err) => {
-    if (err) return res.status(500).send("Logout failed");
-    res.redirect("/auth/login");
-  });
-});
+//! delete my account
+authRouter.delete("/delete-account", protect, deleteMyAccount);
 
-module.exports = router;
+module.exports = authRouter;

@@ -1,10 +1,14 @@
 const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema({
-  googleId: { type: String, required: true, uniqueId: true },
-  email: { type: String, required: true, unique: true },
+  googleId: { type: String, required: true, unique: true },
+  email: { type: String, required: true },
   displayName: { type: String, required: true },
-  // profile: { type: String },
+  deletedUser: {
+    type: Boolean,
+    select: false,
+    default: false,
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

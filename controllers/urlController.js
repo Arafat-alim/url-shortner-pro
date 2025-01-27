@@ -1,11 +1,18 @@
-const mongoose = require("mongoose");
+const useragent = require("useragent");
 const Url = require("../models/Url");
+const geoip = require("geoip-lite");
 const { generateAlias } = require("../utils/generateAlias");
 
 exports.createShortUrl = async (req, res) => {
   try {
     const { longUrl, customAlias } = req.body;
     const userId = req.user.id;
+
+    if (!longUrl) {
+      return res
+        .status(400)
+        .json({ success: false, message: "URL is required" });
+    }
 
     let shortUrl = customAlias || generateAlias();
     let attempts = 0; //introducing this to make sure our code will not stack in infinite loop
@@ -70,6 +77,52 @@ exports.createShortUrl = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to shorten the URL",
+    });
+  }
+};
+
+exports.redirectUrl = async (req, res) => {
+  try {
+    const { alias } = req.params;
+    const ipAddress = req.headers["x-forwarded-for"] || "103.165.115.111";
+
+    //! Analytics Records
+    const agent = useragent.parse(req.headers["user-agent"]);
+
+    const geo = geoip.lookup(ipAddress);
+
+    const entry = await Url.findOneAndUpdate(
+      { shortUrl: alias },
+      {
+        $push: {
+          visitedHistory: {
+            timestamps: Date.now(),
+            ipAddress: ipAddress,
+            userAgent: req.headers["user-agent"],
+            osType: agent.os.family,
+            deviceType: agent.device.family,
+            platform: agent.platform,
+            browser: agent.family,
+            country: geo.country,
+            region: geo.region,
+            city: geo.city,
+          },
+        },
+      }
+    );
+    if (!entry) {
+      return res.status(404).json({
+        success: false,
+        message: "Data not found, Updation failed",
+      });
+    }
+
+    res.redirect(entry.longUrl);
+  } catch (err) {
+    console.error("Something went wrong while redirecting : ", err.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to redirect URL",
     });
   }
 };

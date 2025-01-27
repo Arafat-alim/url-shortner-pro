@@ -1,6 +1,7 @@
 const passport = require("passport");
-const { generateToken } = require("../utils/generateToken");
+
 const User = require("../models/User");
+const { generateJwtToken } = require("../utils/generateJwtToken");
 
 //! Google OAuth login
 exports.googleLogin = passport.authenticate("google", {
@@ -18,7 +19,7 @@ exports.googleCallback = (req, res, next) => {
         return res.status(401).json({ message: "Authentication failed" });
 
       //! Generate JWT token
-      const token = generateToken(user.googleId);
+      const token = generateJwtToken(user);
 
       //! Send response with token and user details
       res.status(200).json({
@@ -53,7 +54,7 @@ exports.googleLogout = (req, res) => {
 //! find me
 exports.findMe = async (req, res) => {
   try {
-    const googleId = req.user.id;
+    const googleId = req.user.googleId;
     const user = await User.findOne({ googleId }).select("+deletedUser");
     if (!user) {
       return res.status(404).json({
@@ -86,7 +87,7 @@ exports.findMe = async (req, res) => {
 
 exports.deleteMyAccount = async (req, res) => {
   try {
-    const googleId = req.user.id;
+    const googleId = req.user.googleId;
     const user = await User.findOne({ googleId }).select("+deletedUser");
     if (!user) {
       return res.status(404).json({

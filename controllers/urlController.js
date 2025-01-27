@@ -107,7 +107,7 @@ exports.redirectUrl = async (req, res) => {
       city: geo?.city || null,
     };
     const entry = await Url.findOneAndUpdate(
-      { userId: req.user.id, shortUrl: alias },
+      { shortUrl: alias },
       {
         $push: {
           visitedHistory: visitedHistoryEntry,

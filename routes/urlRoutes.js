@@ -5,6 +5,6 @@ const urlRouter = express.Router();
 
 urlRouter.post("/", protect, createShortUrl);
 // urlRouter.get("/:alias", protect, redirectUrl);
-urlRouter.get("/:alias", redirectUrl);
+urlRouter.get("/:alias", protect, redirectUrl);
 
 module.exports = urlRouter;

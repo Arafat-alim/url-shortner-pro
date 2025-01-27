@@ -91,27 +91,29 @@ exports.redirectUrl = async (req, res) => {
 
     //! Analytics Records
     const agent = useragent.parse(req.headers["user-agent"]);
-
     const geo = geoip.lookup(ipAddress);
 
+    //! Data
+    const visitedHistoryEntry = {
+      timestamps: new Date(), // Store as Date object for easier querying/sorting
+      ipAddress: ipAddress,
+      userAgent: req.headers["user-agent"],
+      osType: agent.os.family || "Unknown", // Provide default values
+      deviceType: agent.device.family || "Unknown",
+      platform: agent.platform || "Unknown",
+      browser: agent.family || "Unknown",
+      country: geo?.country || null, // Optional chaining to handle null values safely
+      region: geo?.region || null,
+      city: geo?.city || null,
+    };
     const entry = await Url.findOneAndUpdate(
-      { shortUrl: alias },
+      { userId: req.user.id, shortUrl: alias },
       {
         $push: {
-          visitedHistory: {
-            timestamps: Date.now(),
-            ipAddress: ipAddress,
-            userAgent: req.headers["user-agent"],
-            osType: agent.os.family,
-            deviceType: agent.device.family,
-            platform: agent.platform,
-            browser: agent.family,
-            country: geo.country,
-            region: geo.region,
-            city: geo.city,
-          },
+          visitedHistory: visitedHistoryEntry,
         },
-      }
+      },
+      { new: true } // Return the updated document
     );
     if (!entry) {
       return res.status(404).json({

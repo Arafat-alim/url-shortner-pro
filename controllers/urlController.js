@@ -2,11 +2,14 @@ const useragent = require("useragent");
 const Url = require("../models/Url");
 const geoip = require("geoip-lite");
 const { generateAlias } = require("../utils/generateAlias");
+const User = require("../models/User");
 
 exports.createShortUrl = async (req, res) => {
   try {
     const { longUrl, customAlias } = req.body;
-    const userId = req.user.id;
+    const googleId = req.user.googleId;
+
+    const user = await User.findOne({ googleId });
 
     if (!longUrl) {
       return res
@@ -49,8 +52,8 @@ exports.createShortUrl = async (req, res) => {
     }
 
     const newUrl = new Url({
-      userId: userId,
-      longUrl, // Shorthand property names
+      userId: user._id,
+      longUrl,
       customAlias,
       shortUrl,
     });

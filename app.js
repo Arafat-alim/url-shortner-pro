@@ -8,6 +8,7 @@ const session = require("express-session");
 const authRoutes = require("./routes/authRoutes.js");
 const userRoutes = require("./routes/userRoutes.js");
 const urlRoutes = require("./routes/urlRoutes.js");
+const analyticsRoutes = require("./routes/analyticsRoutes.js");
 
 const express = require("express");
 const app = express();
@@ -41,6 +42,7 @@ app.use(passport.session());
 app.use("/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/v1/shorten", urlRoutes);
+app.use("/api/v1/analytics", analyticsRoutes);
 
 //! Test Routes
 app.get("/", (req, res) => {

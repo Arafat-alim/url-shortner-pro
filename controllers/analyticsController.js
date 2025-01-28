@@ -1,9 +1,19 @@
 // const User = require("../models/User");
+const redisClient = require("../config/redis");
 const Url = require("../models/Url");
 
 exports.getUrlAnalytics = async (req, res) => {
   try {
     const { alias } = req.params;
+    const redisKey = `urlAnalytics:${alias}`;
+
+    // Check Redis first
+    let cachedData = await redisClient.get(redisKey);
+    if (cachedData) {
+      console.log("Url analytics data fetched from cache");
+      return res.json(JSON.parse(cachedData));
+    }
+
     const url = await Url.findOne({ shortUrl: alias });
 
     if (!url) {
@@ -12,6 +22,7 @@ exports.getUrlAnalytics = async (req, res) => {
         message: "URL not found",
       });
     }
+
     const totalClicks = url.visitedHistory.length || 0;
     const uniqueUsers = new Set(
       url.visitedHistory.map((visitor) => visitor.ipAddress)
@@ -75,6 +86,19 @@ exports.getUrlAnalytics = async (req, res) => {
       };
     });
 
+    // Cache the result in Redis with expiry
+    redisClient.setex(
+      redisKey,
+      600,
+      JSON.stringify({
+        success: true,
+        totalClicks,
+        uniqueUsers,
+        clicksByDate: formattedClicksByDate,
+        osType: formattedOsData,
+      })
+    );
+
     return res.status(200).json({
       success: true,
       totalClicks,
@@ -94,12 +118,21 @@ exports.getUrlAnalytics = async (req, res) => {
 exports.getOverallAnalytics = async (req, res) => {
   try {
     const { id } = req.user;
+
     const urls = await Url.find({ userId: id });
     if (!urls.length) {
       return res.status(404).json({
         success: false,
         message: "No URL Found for this URL",
       });
+    }
+
+    const redisKey = `overallAnalytics`;
+    let cachedData = await redisClient.get(redisKey);
+
+    if (cachedData) {
+      console.log("Overall analytics data fetched from cache");
+      return res.json(JSON.parse(cachedData));
     }
     const totalUrls = urls.length;
 
@@ -164,6 +197,20 @@ exports.getOverallAnalytics = async (req, res) => {
       uniqueClicks: deviceType[deviceName].uniqueClicks,
       uniqueUsers: deviceType[deviceName].uniqueUsers.size,
     }));
+
+    redisClient.setex(
+      redisKey,
+      600,
+      JSON.stringify({
+        success: true,
+        totalUrls,
+        totalClicks,
+        uniqueUsers: uniqueUsers.size,
+        clicksByDate: formattedClicksByDate,
+        osType: formattedOsType,
+        deviceType: formattedDeviceType,
+      })
+    );
 
     return res.status(200).json({
       success: true,

@@ -3,7 +3,7 @@ const Url = require("../models/Url");
 
 exports.getUrlAnalytics = async (req, res) => {
   try {
-    const { alias, page, limit } = req.params;
+    const { alias } = req.params;
     const url = await Url.findOne({ shortUrl: alias });
 
     if (!url) {
@@ -20,8 +20,9 @@ exports.getUrlAnalytics = async (req, res) => {
     //! Clicks by Date (Last 7 Days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     const clickByDate = {};
+
     url.visitedHistory.forEach((visitor) => {
       const date = visitor.timestamps.toISOString().split("T")[0];
       if (visitor.timestamps >= sevenDaysAgo) {

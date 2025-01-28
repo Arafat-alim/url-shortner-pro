@@ -87,7 +87,8 @@ exports.createShortUrl = async (req, res) => {
 exports.redirectUrl = async (req, res) => {
   try {
     const { alias } = req.params;
-    const ipAddress = req.headers["x-forwarded-for"] || "103.165.115.111";
+    // const ipAddress = req.headers["x-forwarded-for"] || "103.165.115.111";
+    const ipAddress = req.ip || "103.165.115.111";
 
     //! Analytics Records
     const agent = useragent.parse(req.headers["user-agent"]);

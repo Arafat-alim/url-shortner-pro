@@ -117,6 +117,13 @@ exports.getUrlAnalytics = async (req, res) => {
 
 exports.getOverallAnalytics = async (req, res) => {
   try {
+    const redisKey = `overallAnalytics`;
+    let cachedData = await redisClient.get(redisKey);
+
+    if (cachedData) {
+      console.log("Overall analytics data fetched from cache");
+      return res.json(JSON.parse(cachedData));
+    }
     const { id } = req.user;
 
     const urls = await Url.find({ userId: id });
@@ -127,13 +134,6 @@ exports.getOverallAnalytics = async (req, res) => {
       });
     }
 
-    const redisKey = `overallAnalytics`;
-    let cachedData = await redisClient.get(redisKey);
-
-    if (cachedData) {
-      console.log("Overall analytics data fetched from cache");
-      return res.json(JSON.parse(cachedData));
-    }
     const totalUrls = urls.length;
 
     let totalClicks = 0;
@@ -231,5 +231,71 @@ exports.getOverallAnalytics = async (req, res) => {
       success: false,
       message: "Failed to fetch the overall url analytics",
     });
+  }
+};
+
+exports.getTopicAnalytics = async (req, res) => {
+  try {
+    const { topic } = req.params;
+
+    const redisKey = `topicAnalytic1:${topic}`;
+    const cacheData = await redisClient.get(redisKey);
+    if (cacheData) {
+      return res.json(JSON.parse(cacheData));
+    }
+    //! Redis Data/topic not found then checked into the mongo database
+    const urls = await Url.find({ topic });
+    if (!urls.length) {
+      return res.status(404).json({
+        success: false,
+        message: "URL not found",
+      });
+    }
+    const totalClicks = urls.reduce(
+      (acc, url) => acc + url.visitedHistory.length,
+      0
+    );
+    const uniqueUsers = new Set(
+      urls
+        .map((url) => url.visitedHistory.map((visitor) => visitor.ipAddress))
+        .flat()
+    ).size;
+
+    //! clicks by Date
+    const clicksByDate = {};
+    urls.forEach((url) => {
+      url.visitedHistory.forEach((visitor) => {
+        const date = visitor.timestamps.toISOString().split("T")[0];
+        clicksByDate[date] = (clicksByDate[data] || 0) + 1;
+      });
+    });
+
+    const formattedClicksByDate = Object.entries(clicksByDate).map(
+      ([date, count]) => ({ date, count })
+    );
+
+    //! urls with analytics
+    const urlsAnalytics = urls.map((url) => ({
+      shortUrl: url.shortUrl,
+      totalClicks: url.visitedHistory.length,
+      uniqueUsers: new Set(
+        url.visitedHistory.map((visitor) => visitor.ipAddress)
+      ).size,
+    }));
+
+    const data = {
+      totalClicks,
+      uniqueUsers,
+      clicksByDate: formattedClicksByDate,
+      urls: urlsAnalytics,
+    };
+
+    await redisClient.setex(redisKey, 600, JSON.stringify(data));
+    return res.status(200).json(data);
+  } catch (err) {
+    console.error(
+      "Something went wrong while fetching the topic analytics: ",
+      err.message
+    );
   }
 };

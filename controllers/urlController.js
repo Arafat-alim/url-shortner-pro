@@ -7,10 +7,10 @@ const redisClient = require("../config/redis");
 
 exports.createShortUrl = async (req, res) => {
   try {
-    const { longUrl, customAlias } = req.body;
+    const { longUrl, customAlias, topic } = req.body;
     const googleId = req.user.googleId;
-
     const user = await User.findOne({ googleId });
+    const redisKey = "dataAdded";
 
     if (!longUrl) {
       return res
@@ -55,17 +55,21 @@ exports.createShortUrl = async (req, res) => {
     const newUrl = new Url({
       userId: user._id,
       longUrl,
+      topic,
       customAlias,
       shortUrl,
     });
 
-    await newUrl.save();
-    return res.status(201).json({
-      success: true,
-      shortUrl,
-      longUrl,
-      createdAt: newUrl.createdAt,
-    });
+    const data = await newUrl.save();
+    if (data) {
+      //! saving into the redis db
+      await redisClient.setex(redisKey, 600, JSON.stringify(data));
+
+      return res.status(201).json({
+        success: true,
+        data,
+      });
+    }
   } catch (err) {
     console.error("Error creating short URL:", err);
 

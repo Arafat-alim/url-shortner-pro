@@ -10,6 +10,7 @@ const urlSchema = mongoose.Schema(
     customAlias: { type: String, unique: true, sparse: true },
     shortUrl: { type: String, required: true, unique: true },
     longUrl: { type: String, required: true },
+    topic: { type: String, required: true },
     visitedHistory: [
       {
         timestamps: { type: Date },

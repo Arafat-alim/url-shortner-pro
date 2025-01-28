@@ -3,6 +3,7 @@ const Url = require("../models/Url");
 const geoip = require("geoip-lite");
 const { generateAlias } = require("../utils/generateAlias");
 const User = require("../models/User");
+const redisClient = require("../config/redis");
 
 exports.createShortUrl = async (req, res) => {
   try {
@@ -112,6 +113,7 @@ exports.redirectUrl = async (req, res) => {
         $push: {
           visitedHistory: visitedHistoryEntry,
         },
+        $inc: { clicks: 1 },
       },
       { new: true } // Return the updated document
     );
@@ -121,6 +123,17 @@ exports.redirectUrl = async (req, res) => {
         message: "Data not found, Updation failed",
       });
     }
+
+    //! invalid the key of the specified url
+    const key = `shortUrl:${req.originalUrl}`;
+    redisClient.del(key);
+
+    //Invalidate cache for Overall Analytics
+    const userKey = `overallAnalytics`;
+    redisClient.del(userKey);
+
+    const urlAnalyticsKey = `urlAnalytics:${alias}`;
+    redisClient.del(urlAnalyticsKey);
 
     res.redirect(entry.longUrl);
   } catch (err) {

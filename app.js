@@ -4,7 +4,7 @@ const passport = require("passport");
 require("./config/passport.js");
 const { default: helmet } = require("helmet");
 const session = require("express-session");
-// const cookieParser = require("cookie-parser");
+const useragent = require("express-useragent");
 const authRoutes = require("./routes/authRoutes.js");
 const userRoutes = require("./routes/userRoutes.js");
 const urlRoutes = require("./routes/urlRoutes.js");
@@ -34,6 +34,10 @@ app.use(
     cookie: { secure: process.env.NODE_ENV === "production" },
   })
 );
+
+//! user agent expose
+app.use(useragent.express());
+
 //! authentication
 app.use(passport.initialize());
 app.use(passport.session());

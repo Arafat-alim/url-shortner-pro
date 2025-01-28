@@ -1,4 +1,4 @@
-const useragent = require("useragent");
+// const useragent = require("useragent");
 const Url = require("../models/Url");
 const geoip = require("geoip-lite");
 const { generateAlias } = require("../utils/generateAlias");
@@ -87,11 +87,10 @@ exports.createShortUrl = async (req, res) => {
 exports.redirectUrl = async (req, res) => {
   try {
     const { alias } = req.params;
-    // const ipAddress = req.headers["x-forwarded-for"] || "103.165.115.111";
     const ipAddress = req.ip || "103.165.115.111";
 
     //! Analytics Records
-    const agent = useragent.parse(req.headers["user-agent"]);
+    // const agent = useragent.parse(req.headers["user-agent"]);
     const geo = geoip.lookup(ipAddress);
 
     //! Data
@@ -99,11 +98,11 @@ exports.redirectUrl = async (req, res) => {
       timestamps: new Date(), // Store as Date object for easier querying/sorting
       ipAddress: ipAddress,
       userAgent: req.headers["user-agent"],
-      osType: agent.os.family || "Unknown", // Provide default values
-      deviceType: agent.device.family || "Unknown",
-      platform: agent.platform || "Unknown",
-      browser: agent.family || "Unknown",
-      country: geo?.country || null, // Optional chaining to handle null values safely
+      osType: req.useragent.os || "Unknown",
+      deviceType: req.useragent.isMobile ? "mobile" : "desktop",
+      platform: req.useragent.platform || "Unknown",
+      browser: req.useragent.browser || "Unknown",
+      country: geo?.country || null,
       region: geo?.region || null,
       city: geo?.city || null,
     };

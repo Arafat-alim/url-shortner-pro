@@ -16,6 +16,7 @@ const cors = require("cors");
 
 //! mongodb connection
 const connectDB = require("./config/db.js");
+const limiter = require("./middlewares/rateLimit.js");
 connectDB();
 
 //! Middlewares
@@ -34,6 +35,8 @@ app.use(
     cookie: { secure: process.env.NODE_ENV === "production" },
   })
 );
+
+app.use("/api/", limiter);
 
 //! user agent expose
 app.use(useragent.express());

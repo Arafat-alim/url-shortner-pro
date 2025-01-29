@@ -6,7 +6,6 @@ const { default: helmet } = require("helmet");
 const session = require("express-session");
 const useragent = require("express-useragent");
 const authRoutes = require("./routes/authRoutes.js");
-const userRoutes = require("./routes/userRoutes.js");
 const urlRoutes = require("./routes/urlRoutes.js");
 const analyticsRoutes = require("./routes/analyticsRoutes.js");
 
@@ -47,7 +46,6 @@ app.use(passport.session());
 
 //! routes
 app.use("/auth", authRoutes);
-app.use("/api/user", userRoutes);
 app.use("/api/v1/shorten", urlRoutes);
 app.use("/api/v1/analytics", analyticsRoutes);
 

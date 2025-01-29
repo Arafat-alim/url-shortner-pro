@@ -84,6 +84,12 @@ docker run -p 5000:5000 url-shortner-pro
 
 ---
 
+## 📮 Postman Collection
+
+- Download Here 👉 [Link](https://bit.ly/4hr3N4M)
+
+---
+
 ## 📌 API Endpoints
 
 ### 1️⃣ **User Authentication**
@@ -95,7 +101,7 @@ docker run -p 5000:5000 url-shortner-pro
 
 ### **Steps to Get the Authentication Token**
 
-1. Open this URL in a browser: `https://url-shortner-pro.onrender.com/auth/google`
+1. Open this URL in a browser: `https://url-shortner-pro.onrender.com/auth/google` or [Login with Google](https://url-shortner-pro.onrender.com/auth/google)
 2. Sign up or log in with your Google account.
 3. After successful authentication, you will receive a token. Copy it.
 4. Open Postman and go to **Environment** settings. Add a new variable:

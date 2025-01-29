@@ -28,6 +28,12 @@ This project is a **scalable URL Shortener API** with advanced features such as 
 
 ---
 
+## Application MindMap or Design
+
+![mindMap](https://res.cloudinary.com/cocoder/image/upload/v1737395734/Projects/url_shortner/diagram-export-20-1-2025-11_25_11-pm_utdzhd.png)
+
+---
+
 ## 📌 Installation & Setup
 
 ### 1️⃣ Clone the Repository
@@ -96,6 +102,10 @@ docker run -p 5000:5000 url-shortner-pro
 2. Drag and drop the file into the import modal or manually select the file.
 3. You're all set!
 
+### 📽️ You can watch the below video
+
+![collection-video](https://res.cloudinary.com/cocoder/image/upload/v1738162998/Projects/url_shortner/chrome_Bsn8ARMGRW_rezca0.gif)
+
 ---
 
 ## 📌 API Endpoints
@@ -122,6 +132,10 @@ docker run -p 5000:5000 url-shortner-pro
    3. You should receive the expected response.
 6. You can now explore other APIs. If you encounter an `Unauthorized User` error, please notify us.
 7. All set!
+
+### 📽️ You can watch the below video
+
+![authenticate-video](https://res.cloudinary.com/cocoder/image/upload/v1738163000/Projects/url_shortner/chrome_LIf38PN5T0_eupkui.gif)
 
 ---
 

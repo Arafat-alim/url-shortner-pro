@@ -86,7 +86,15 @@ docker run -p 5000:5000 url-shortner-pro
 
 ## 📮 Postman Collection
 
-- Download Here 👉 [Link](https://bit.ly/4hr3N4M)
+- ⬇️ **Download Postman Application** - [🔗 Link](https://www.postman.com/downloads/)
+- 🌍 **Access the Web Version of Postman** - [🔗 Postman Web](https://web.postman.co/home)
+- ⬇️ **Download the Collection Here** 👉 [🔗 Link](https://bit.ly/4hr3N4M)
+
+### ⏺️ How to `Import` a Downloaded Postman Collection
+
+1. Click on the **`Import`** button in the top left corner of Postman.
+2. Drag and drop the file into the import modal or manually select the file.
+3. You're all set!
 
 ---
 

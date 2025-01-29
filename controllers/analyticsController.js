@@ -117,102 +117,89 @@ exports.getUrlAnalytics = async (req, res) => {
 
 exports.getOverallAnalytics = async (req, res) => {
   try {
-    const redisKey = `overallAnalytics`;
+    const redisKey = `overallAnalytics:${req.user.id}`;
     let cachedData = await redisClient.get(redisKey);
 
     if (cachedData) {
       console.log("Overall analytics data fetched from cache");
       return res.json(JSON.parse(cachedData));
     }
-    const { id } = req.user;
 
+    const { id } = req.user;
     const urls = await Url.find({ userId: id });
+
     if (!urls.length) {
       return res.status(404).json({
         success: false,
-        message: "No URL Found for this URL",
+        message: "No URLs found for this user",
       });
     }
 
     const totalUrls = urls.length;
-
     let totalClicks = 0;
     const uniqueUsers = new Set();
     const clicksByDate = {};
-    const osType = {};
-    const deviceType = {};
+    const osStats = {};
+    const deviceStats = {};
 
     urls.forEach((url) => {
       url.visitedHistory.forEach((visitor) => {
-        //! total clicks
+        //! Count total clicks
         totalClicks++;
 
-        //! unique users
+        //! Track unique users
         uniqueUsers.add(visitor.ipAddress);
 
-        //! clicksByDate
+        //! Track clicks by date
         const date = visitor.timestamps.toISOString().split("T")[0];
         clicksByDate[date] = (clicksByDate[date] || 0) + 1;
 
-        //! osType
+        //! Track OS statistics
         if (visitor.osType) {
-          if (!osType[visitor.osType]) {
-            osType[visitor.osType] = {
+          if (!osStats[visitor.osType]) {
+            osStats[visitor.osType] = {
               uniqueClicks: 0,
               uniqueUsers: new Set(),
             };
-            osType[visitor.osType].uniqueClicks++;
-            osType[visitor.osType].uniqueUsers.add(visitor.ipAddress);
           }
+          osStats[visitor.osType].uniqueClicks++;
+          osStats[visitor.osType].uniqueUsers.add(visitor.ipAddress);
         }
 
-        //! device type
+        //! Track device statistics
         if (visitor.deviceType) {
-          if (!deviceType[visitor.deviceType]) {
-            deviceType[visitor.deviceType] = {
+          if (!deviceStats[visitor.deviceType]) {
+            deviceStats[visitor.deviceType] = {
               uniqueClicks: 0,
               uniqueUsers: new Set(),
             };
-
-            deviceType[visitor.deviceType].uniqueClicks++;
-            deviceType[visitor.deviceType].uniqueUsers.add(visitor.ipAddress);
           }
+          deviceStats[visitor.deviceType].uniqueClicks++;
+          deviceStats[visitor.deviceType].uniqueUsers.add(visitor.ipAddress);
         }
       });
     });
 
+    // Format the response data
     const formattedClicksByDate = Object.keys(clicksByDate).map((date) => ({
       date,
       clicks: clicksByDate[date],
     }));
 
-    const formattedOsType = Object.keys(osType).map((osName) => ({
+    const formattedOsType = Object.keys(osStats).map((osName) => ({
       osName,
-      uniqueClicks: osType[osName].uniqueClicks,
-      uniqueUsers: osType[osName].uniqueUsers.size,
+      uniqueClicks: osStats[osName].uniqueClicks,
+      uniqueUsers: osStats[osName].uniqueUsers.size,
     }));
 
-    const formattedDeviceType = Object.keys(deviceType).map((deviceName) => ({
+    const formattedDeviceType = Object.keys(deviceStats).map((deviceName) => ({
       deviceName,
-      uniqueClicks: deviceType[deviceName].uniqueClicks,
-      uniqueUsers: deviceType[deviceName].uniqueUsers.size,
+      uniqueClicks: deviceStats[deviceName].uniqueClicks,
+      uniqueUsers: deviceStats[deviceName].uniqueUsers.size,
     }));
 
-    redisClient.setex(
-      redisKey,
-      600,
-      JSON.stringify({
-        success: true,
-        totalUrls,
-        totalClicks,
-        uniqueUsers: uniqueUsers.size,
-        clicksByDate: formattedClicksByDate,
-        osType: formattedOsType,
-        deviceType: formattedDeviceType,
-      })
-    );
-
-    return res.status(200).json({
+    // Prepare final response object
+    const responseData = {
       success: true,
       totalUrls,
       totalClicks,
@@ -220,16 +207,17 @@ exports.getOverallAnalytics = async (req, res) => {
       clicksByDate: formattedClicksByDate,
       osType: formattedOsType,
       deviceType: formattedDeviceType,
-    });
-  } catch (err) {
-    console.error(
-      "Something went wrong while fetching overall analytics data",
-      err.message
-    );
+    };
 
+    // Cache the response in Redis for 10 minutes
+    redisClient.setex(redisKey, 600, JSON.stringify(responseData));
+
+    return res.status(200).json(responseData);
+  } catch (err) {
+    console.error("Error fetching overall analytics:", err.message);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch the overall url analytics",
+      message: "Failed to fetch overall analytics",
     });
   }
 };

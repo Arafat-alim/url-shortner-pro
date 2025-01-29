@@ -4,7 +4,8 @@ const geoip = require("geoip-lite");
 const { generateAlias } = require("../utils/generateAlias");
 const User = require("../models/User");
 const redisClient = require("../config/redis");
-var ip = require("ip");
+// var ip = require("ip");
+const requestIp = require("request-ip");
 
 exports.createShortUrl = async (req, res) => {
   try {
@@ -93,7 +94,8 @@ exports.createShortUrl = async (req, res) => {
 exports.redirectUrl = async (req, res) => {
   try {
     const { alias } = req.params;
-    const ipAddress = ip.address() || "103.165.115.111";
+    const ipAddress = requestIp.getClientIp(req) || "103.165.115.111";
+    console.log(ipAddress);
 
     //! Analytics Records
     // const agent = useragent.parse(req.headers["user-agent"]);

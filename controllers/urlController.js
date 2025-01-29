@@ -129,8 +129,6 @@ exports.redirectUrl = async (req, res) => {
       });
     }
 
-    console.log("entry__", entry.topic);
-
     //! invalid the key of the specified url
     const key = `shortUrl:${req.originalUrl}`;
     redisClient.del(key);

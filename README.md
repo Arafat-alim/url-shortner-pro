@@ -168,7 +168,7 @@ This project is licensed under the **MIT License**.
 
 - **Author:** Arafat Aman Alim
 - **Email:** arafat.aman.alimgmail.com
-- **GitHub:** [Your GitHub Profile](https://github.com/arafat-alim)
+- **GitHub:** [Arafat Aman Alim](https://github.com/arafat-alim)
 <!-- - **Live Demo:** [Live URL](https://your-live-app.com) -->
 
 ---

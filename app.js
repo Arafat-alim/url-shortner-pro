@@ -9,6 +9,11 @@ const authRoutes = require("./routes/authRoutes.js");
 const userRoutes = require("./routes/userRoutes.js");
 const urlRoutes = require("./routes/urlRoutes.js");
 const analyticsRoutes = require("./routes/analyticsRoutes.js");
+const {
+  swaggerUi,
+  swaggerSpec,
+  swaggerUiOptions,
+} = require("./config/swagger");
 
 const express = require("express");
 const app = express();
@@ -20,7 +25,12 @@ const limiter = require("./middlewares/rateLimit.js");
 connectDB();
 
 //! Middlewares
-app.use(cors());
+const corsOptions = {
+  origin: "*", // Change this to specific domains in production
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: "Content-Type, Authorization",
+};
+app.use(cors(corsOptions));
 app.use(helmet());
 // app.use(cookieParser());
 app.use(express.json());
@@ -46,6 +56,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 //! routes
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, swaggerUiOptions)
+);
 app.use("/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/v1/shorten", urlRoutes);
@@ -61,6 +76,7 @@ app.get("/", (req, res) => {
 
 //! start server
 const PORT = process.env.PORT || 5000;
+console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });

@@ -238,7 +238,8 @@ exports.getTopicAnalytics = async (req, res) => {
   try {
     const { topic } = req.params;
 
-    const redisKey = `topicAnalytic1:${topic}`;
+    const redisKey = `topicAnalytics:${topic}`;
+    console.log("redisKey__", redisKey);
     const cacheData = await redisClient.get(redisKey);
     if (cacheData) {
       return res.json(JSON.parse(cacheData));
@@ -266,7 +267,7 @@ exports.getTopicAnalytics = async (req, res) => {
     urls.forEach((url) => {
       url.visitedHistory.forEach((visitor) => {
         const date = visitor.timestamps.toISOString().split("T")[0];
-        clicksByDate[date] = (clicksByDate[data] || 0) + 1;
+        clicksByDate[date] = (clicksByDate[date] || 0) + 1;
       });
     });
 
@@ -283,15 +284,15 @@ exports.getTopicAnalytics = async (req, res) => {
       ).size,
     }));
 
-    const data = {
+    const finalData = {
       totalClicks,
       uniqueUsers,
       clicksByDate: formattedClicksByDate,
       urls: urlsAnalytics,
     };
 
-    await redisClient.setex(redisKey, 600, JSON.stringify(data));
-    return res.status(200).json(data);
+    await redisClient.setex(redisKey, 600, JSON.stringify(finalData));
+    return res.status(200).json(finalData);
   } catch (err) {
     console.error(
       "Something went wrong while fetching the topic analytics: ",

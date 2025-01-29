@@ -129,6 +129,8 @@ exports.redirectUrl = async (req, res) => {
       });
     }
 
+    console.log("entry__", entry.topic);
+
     //! invalid the key of the specified url
     const key = `shortUrl:${req.originalUrl}`;
     redisClient.del(key);
@@ -139,6 +141,9 @@ exports.redirectUrl = async (req, res) => {
 
     const urlAnalyticsKey = `urlAnalytics:${alias}`;
     redisClient.del(urlAnalyticsKey);
+
+    const topicAnalyticsKey = `topicAnalytics:${entry.topic}`;
+    redisClient.del(topicAnalyticsKey);
 
     res.redirect(entry.longUrl);
   } catch (err) {

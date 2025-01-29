@@ -239,7 +239,6 @@ exports.getTopicAnalytics = async (req, res) => {
     const { topic } = req.params;
 
     const redisKey = `topicAnalytics:${topic}`;
-    console.log("redisKey__", redisKey);
     const cacheData = await redisClient.get(redisKey);
     if (cacheData) {
       return res.json(JSON.parse(cacheData));

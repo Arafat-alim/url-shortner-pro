@@ -104,6 +104,7 @@ docker run -p 5000:5000 url-shortner-pro
 
 ### 📽️ You can watch the below video
 
+- [Watch Here](https://res.cloudinary.com/cocoder/image/upload/v1738162998/Projects/url_shortner/chrome_Bsn8ARMGRW_rezca0.gif)
 ![collection-video](https://res.cloudinary.com/cocoder/image/upload/v1738162998/Projects/url_shortner/chrome_Bsn8ARMGRW_rezca0.gif)
 
 ---
@@ -135,6 +136,7 @@ docker run -p 5000:5000 url-shortner-pro
 
 ### 📽️ You can watch the below video
 
+- [Watch Here](https://res.cloudinary.com/cocoder/image/upload/v1738163000/Projects/url_shortner/chrome_LIf38PN5T0_eupkui.gif)
 ![authenticate-video](https://res.cloudinary.com/cocoder/image/upload/v1738163000/Projects/url_shortner/chrome_LIf38PN5T0_eupkui.gif)
 
 ---

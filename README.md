@@ -204,6 +204,8 @@ npm test
 - Real-time monitoring
 - Cloud provider migration from Render to AWS
 - Notifier (Discord webhook)
+- QR Code Generation
+- Link Expiration
 
 ---
 

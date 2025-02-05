@@ -11,20 +11,7 @@ const urlSchema = mongoose.Schema(
     shortUrl: { type: String, required: true, unique: true },
     longUrl: { type: String, required: true },
     topic: { type: String, required: true },
-    visitedHistory: [
-      {
-        timestamps: { type: Date },
-        ipAddress: { type: String },
-        userAgent: { type: String },
-        osType: { type: String },
-        deviceType: { type: String },
-        platform: { type: String },
-        browser: { type: String },
-        country: { type: String },
-        region: { type: String },
-        city: { type: String },
-      },
-    ],
+    clicks: { type: Number, default: 0 },
   },
   {
     timestamps: true,

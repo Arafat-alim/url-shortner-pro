@@ -6,6 +6,7 @@ const User = require("../models/User");
 const redisClient = require("../config/redis");
 // var ip = require("ip");
 const requestIp = require("request-ip");
+const Analytic = require("../models/Analytic");
 
 exports.createShortUrl = async (req, res) => {
   try {
@@ -21,7 +22,7 @@ exports.createShortUrl = async (req, res) => {
     }
 
     let shortUrl = customAlias || generateAlias();
-    let attempts = 0; //introducing this to make sure our code will not stack in infinite loop
+    let attempts = 0; // Introducing this to make sure our code doesn't get stuck in an infinite loop
     const maxAttempts = 3;
 
     let isAliasFind;
@@ -34,7 +35,6 @@ exports.createShortUrl = async (req, res) => {
           // Custom alias conflict
           if (isAliasFind.customAlias === customAlias) {
             return res.status(409).json({
-              // 409 Conflict
               success: false,
               message: `Custom alias '${customAlias}' already exists. Please choose a different one.`,
             });
@@ -64,7 +64,7 @@ exports.createShortUrl = async (req, res) => {
 
     const data = await newUrl.save();
     if (data) {
-      //! saving into the redis db
+      // Save into Redis
       await redisClient.setex(redisKey, 600, JSON.stringify(data));
 
       return res.status(201).json({
@@ -76,11 +76,9 @@ exports.createShortUrl = async (req, res) => {
     console.error("Error creating short URL:", err);
 
     if (err.code === 11000 && err.keyPattern?.shortUrl) {
-      //check for mongo error code for duplicate key
       return res.status(409).json({
-        //409 Conflict for duplicate shortURL (most likely in concurrency)
         success: false,
-        message: "Generated short URL already exists. Please try again.", //more user friendly message
+        message: "Generated short URL already exists. Please try again.",
       });
     }
 
@@ -97,12 +95,21 @@ exports.redirectUrl = async (req, res) => {
     const ipAddress = requestIp.getClientIp(req) || "103.165.115.111";
     console.log(ipAddress);
 
+    const url = await Url.findOne({ shortUrl: alias });
+    if (!url) {
+      return res.status(404).json({
+        success: false,
+        message: "URL not found",
+      });
+    }
+
     //! Analytics Records
     // const agent = useragent.parse(req.headers["user-agent"]);
     const geo = geoip.lookup(ipAddress);
 
     //! Data
-    const visitedHistoryEntry = {
+    const analyticsData = {
+      urlId: url._id, // Link to the Url document
       timestamps: new Date(), // Store as Date object for easier querying/sorting
       ipAddress: ipAddress,
       userAgent: req.headers["user-agent"],
@@ -114,24 +121,15 @@ exports.redirectUrl = async (req, res) => {
       region: geo?.region || null,
       city: geo?.city || null,
     };
-    const entry = await Url.findOneAndUpdate(
-      { shortUrl: alias },
-      {
-        $push: {
-          visitedHistory: visitedHistoryEntry,
-        },
-        $inc: { clicks: 1 },
-      },
-      { new: true } // Return the updated document
-    );
-    if (!entry) {
-      return res.status(404).json({
-        success: false,
-        message: "Data not found, Updation failed",
-      });
-    }
 
-    //! invalid the key of the specified url
+    // Save the analytics data to the Analytics collection
+    const newAnalytics = new Analytic(analyticsData);
+    await newAnalytics.save();
+
+    // Increment the click count in the Url document
+    url.clicks += 1;
+    await url.save();
+
     const key = `shortUrl:${req.originalUrl}`;
     redisClient.del(key);
 
@@ -142,10 +140,10 @@ exports.redirectUrl = async (req, res) => {
     const urlAnalyticsKey = `urlAnalytics:${alias}`;
     redisClient.del(urlAnalyticsKey);
 
-    const topicAnalyticsKey = `topicAnalytics:${entry.topic}`;
+    const topicAnalyticsKey = `topicAnalytics:${url.topic}`;
     redisClient.del(topicAnalyticsKey);
 
-    res.redirect(entry.longUrl);
+    res.redirect(url.longUrl);
   } catch (err) {
     console.error("Something went wrong while redirecting : ", err.message);
     return res.status(500).json({

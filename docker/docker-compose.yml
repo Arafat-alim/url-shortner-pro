@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  app:
+    container_name: url-shortener-app
+    build:
+      context: .. # Set context to the root of the project
+      dockerfile: docker/Dockerfile # Path to Dockerfile relative to the context
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=${MONGODB_URI} # Reference Render's environment variables
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT} # Secure Redis URL
+    networks:
+      - app-network
+    volumes:
+      - ..:/app
+      - /app/node_modules

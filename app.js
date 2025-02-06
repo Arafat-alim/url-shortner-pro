@@ -13,6 +13,9 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 
+//! Enable trust proxy to properly handle client IPs behind proxies
+app.set("trust proxy", true);
+
 //! mongodb connection
 const connectDB = require("./config/db.js");
 const limiter = require("./middlewares/rateLimit.js");

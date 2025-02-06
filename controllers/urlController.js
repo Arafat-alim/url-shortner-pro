@@ -1,77 +1,22 @@
 // const useragent = require("useragent");
-const Url = require("../models/Url");
-const geoip = require("geoip-lite");
-const { generateAlias } = require("../utils/generateAlias");
-const User = require("../models/User");
-const redisClient = require("../config/redis");
-// var ip = require("ip");
-const requestIp = require("request-ip");
-const Analytic = require("../models/Analytic");
+const urlService = require("../services/urlService");
 
 exports.createShortUrl = async (req, res) => {
   try {
     const { longUrl, customAlias, topic } = req.body;
-    const googleId = req.user.googleId;
-    const user = await User.findOne({ googleId });
-    const redisKey = "dataAdded";
+    const userId = req.user.id;
 
-    if (!longUrl) {
-      return res
-        .status(400)
-        .json({ success: false, message: "URL is required" });
-    }
-
-    let shortUrl = customAlias || generateAlias();
-    let attempts = 0; // Introducing this to make sure our code doesn't get stuck in an infinite loop
-    const maxAttempts = 3;
-
-    let isAliasFind;
-
-    do {
-      isAliasFind = await Url.findOne({ shortUrl });
-
-      if (isAliasFind) {
-        if (customAlias) {
-          // Custom alias conflict
-          if (isAliasFind.customAlias === customAlias) {
-            return res.status(409).json({
-              success: false,
-              message: `Custom alias '${customAlias}' already exists. Please choose a different one.`,
-            });
-          }
-        } else {
-          shortUrl = generateAlias();
-        }
-
-        attempts++;
-      }
-    } while (isAliasFind && attempts < maxAttempts && !customAlias);
-
-    if (attempts >= maxAttempts && !customAlias) {
-      return res.status(500).json({
-        success: false,
-        message: `Failed to generate unique short URL after multiple attempts`,
-      });
-    }
-
-    const newUrl = new Url({
-      userId: user._id,
+    const newUrl = await urlService.createShortUrlService(
       longUrl,
-      topic,
       customAlias,
-      shortUrl,
+      topic,
+      userId
+    );
+
+    return res.status(201).json({
+      success: true,
+      newUrl,
     });
-
-    const data = await newUrl.save();
-    if (data) {
-      // Save into Redis
-      await redisClient.setex(redisKey, 600, JSON.stringify(data));
-
-      return res.status(201).json({
-        success: true,
-        data,
-      });
-    }
   } catch (err) {
     console.error("Error creating short URL:", err);
 
@@ -85,6 +30,7 @@ exports.createShortUrl = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to shorten the URL",
+      error: err.message,
     });
   }
 };
@@ -92,63 +38,16 @@ exports.createShortUrl = async (req, res) => {
 exports.redirectUrl = async (req, res) => {
   try {
     const { alias } = req.params;
-    const ipAddress = requestIp.getClientIp(req) || "103.165.115.111";
-    console.log(ipAddress);
 
-    const url = await Url.findOne({ shortUrl: alias });
-    if (!url) {
-      return res.status(404).json({
-        success: false,
-        message: "URL not found",
-      });
-    }
+    const longUrl = await urlService.redirectUrlService(alias, req);
 
-    //! Analytics Records
-    // const agent = useragent.parse(req.headers["user-agent"]);
-    const geo = geoip.lookup(ipAddress);
-
-    //! Data
-    const analyticsData = {
-      urlId: url._id, // Link to the Url document
-      timestamps: new Date(), // Store as Date object for easier querying/sorting
-      ipAddress: ipAddress,
-      userAgent: req.headers["user-agent"],
-      osType: req.useragent.os || "Unknown",
-      deviceType: req.useragent.isMobile ? "mobile" : "desktop",
-      platform: req.useragent.platform || "Unknown",
-      browser: req.useragent.browser || "Unknown",
-      country: geo?.country || null,
-      region: geo?.region || null,
-      city: geo?.city || null,
-    };
-
-    // Save the analytics data to the Analytics collection
-    const newAnalytics = new Analytic(analyticsData);
-    await newAnalytics.save();
-
-    // Increment the click count in the Url document
-    url.clicks += 1;
-    await url.save();
-
-    const key = `shortUrl:${req.originalUrl}`;
-    redisClient.del(key);
-
-    //Invalidate cache for Overall Analytics
-    const userKey = `overallAnalytics`;
-    redisClient.del(userKey);
-
-    const urlAnalyticsKey = `urlAnalytics:${alias}`;
-    redisClient.del(urlAnalyticsKey);
-
-    const topicAnalyticsKey = `topicAnalytics:${url.topic}`;
-    redisClient.del(topicAnalyticsKey);
-
-    res.redirect(url.longUrl);
+    res.redirect(longUrl);
   } catch (err) {
-    console.error("Something went wrong while redirecting : ", err.message);
+    console.error("Something went wrong while redirecting : ", err);
     return res.status(500).json({
       success: false,
       message: "Failed to redirect URL",
+      error: err.message,
     });
   }
 };

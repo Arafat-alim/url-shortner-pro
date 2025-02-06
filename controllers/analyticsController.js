@@ -1,8 +1,4 @@
 // const User = require("../models/User");
-const redisClient = require("../config/redis");
-const Url = require("../models/Url");
-const Analytic = require("../models/Analytic");
-const mongoose = require("mongoose");
 const analyticService = require("../services/analyticService");
 
 exports.getUrlAnalytics = async (req, res) => {

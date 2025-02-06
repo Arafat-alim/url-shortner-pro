@@ -3,108 +3,13 @@ const redisClient = require("../config/redis");
 const Url = require("../models/Url");
 const Analytic = require("../models/Analytic");
 const mongoose = require("mongoose");
+const analyticService = require("../services/analyticService");
 
 exports.getUrlAnalytics = async (req, res) => {
   const { alias } = req.params;
-  const redisKey = `urlAnalytics:${alias}`;
-
   try {
     // Check Redis cache first
-    let cachedData = await redisClient.get(redisKey);
-    if (cachedData) {
-      console.log("URL analytics data fetched from cache");
-      return res.json(JSON.parse(cachedData));
-    }
-
-    // Step 1: Find the URL by its short alias
-    const url = await Url.findOne({ shortUrl: alias });
-    if (!url) {
-      return res.status(404).json({
-        success: false,
-        message: "URL not found",
-      });
-    }
-
-    // Step 2: Use MongoDB aggregation to calculate analytics
-    const analytics = await Analytic.aggregate([
-      { $match: { urlId: url._id } },
-      {
-        $group: {
-          _id: {
-            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          },
-          clicks: { $sum: 1 },
-          uniqueUsers: { $addToSet: "$ipAddress" },
-        },
-      },
-      { $sort: { "_id.date": -1 } },
-      { $limit: 7 },
-      {
-        $project: {
-          _id: 0,
-          date: "$_id.date",
-          clicks: 1,
-          uniqueUsers: { $size: "$uniqueUsers" },
-        },
-      },
-    ]);
-
-    // Step 3: Calculate OS and Device Type analytics
-    const osAnalytics = await Analytic.aggregate([
-      { $match: { urlId: url._id } },
-      {
-        $group: {
-          _id: "$osType",
-          uniqueClicks: { $sum: 1 },
-          uniqueUsers: { $addToSet: "$ipAddress" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          osName: "$_id",
-          uniqueClicks: 1,
-          uniqueUsers: { $size: "$uniqueUsers" },
-        },
-      },
-    ]);
-
-    const deviceAnalytics = await Analytic.aggregate([
-      { $match: { urlId: url._id } },
-      {
-        $group: {
-          _id: "$deviceType",
-          uniqueClicks: { $sum: 1 },
-          uniqueUsers: { $addToSet: "$ipAddress" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          deviceName: "$_id",
-          uniqueClicks: 1,
-          uniqueUsers: { $size: "$uniqueUsers" },
-        },
-      },
-    ]);
-
-    // Step 4: Calculate total clicks and unique users
-    const totalClicks = await Analytic.countDocuments({ urlId: url._id });
-    const uniqueUsers = await Analytic.distinct("ipAddress", {
-      urlId: url._id,
-    });
-
-    // Step 5: Format the response
-    const response = {
-      totalClicks,
-      uniqueUsers: uniqueUsers.length,
-      clicksByDate: analytics,
-      osType: osAnalytics,
-      deviceType: deviceAnalytics,
-    };
-
-    // Cache the response in Redis for 10 minutes
-    redisClient.setex(redisKey, 600, JSON.stringify(response));
+    const response = await analyticService.getUrlAnalyticsService(alias);
 
     // Step 6: Send the response
     res.status(200).json(response);

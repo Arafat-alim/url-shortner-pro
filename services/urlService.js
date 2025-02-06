@@ -1,4 +1,5 @@
 const Url = require("../models/Url");
+const geoip = require("geoip-lite");
 const Analytic = require("../models/Analytic");
 const { generateAlias } = require("../utils/generateAlias");
 const redisClient = require("../config/redis");
@@ -51,7 +52,7 @@ exports.createShortUrlService = async (longUrl, customAlias, topic, userId) => {
 };
 
 // Redirect to the original URL and log analytics
-exports.redirectUrl = async (alias, req) => {
+exports.redirectUrlService = async (alias, req) => {
   const ipAddress = req.ip || "103.165.115.111";
   const geo = geoip.lookup(ipAddress);
 
@@ -80,16 +81,17 @@ exports.redirectUrl = async (alias, req) => {
   await url.save();
 
   const key = `shortUrl:${req.originalUrl}`;
-  redisClient.del(key);
+  await cacheService.deleteFromCache(key);
+  //   redisClient.del(key);
 
   const userKey = `overallAnalytics`;
-  redisClient.del(userKey);
+  await cacheService.deleteFromCache(userKey);
 
   const urlAnalyticsKey = `urlAnalytics:${alias}`;
-  redisClient.del(urlAnalyticsKey);
+  await cacheService.deleteFromCache(urlAnalyticsKey);
 
   const topicAnalyticsKey = `topicAnalytics:${url.topic}`;
-  redisClient.del(topicAnalyticsKey);
+  await cacheService.deleteFromCache(topicAnalyticsKey);
 
   return url.longUrl;
 };

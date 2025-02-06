@@ -212,11 +212,12 @@ exports.getOverallAnalyticsService = async (userId) => {
 };
 
 // Get topic-based analytics
-exports.getTopicAnalytics = async (topic) => {
+exports.getTopicAnalyticsService = async (topic) => {
   const redisKey = `topicAnalytics:${topic}`;
-  const cachedData = await redisClient.get(redisKey);
+  const cachedData = await cacheService.getFromCache(redisKey);
+
   if (cachedData) {
-    return JSON.parse(cachedData);
+    return cachedData;
   }
 
   const analytics = await Analytic.aggregate([
@@ -287,6 +288,6 @@ exports.getTopicAnalytics = async (topic) => {
     urls,
   };
 
-  await redisClient.setex(redisKey, 600, JSON.stringify(response));
+  await cacheService.setInCache(redisKey, response);
   return response;
 };

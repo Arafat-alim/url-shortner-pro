@@ -1,6 +1,5 @@
 const Url = require("../models/Url");
 const Analytic = require("../models/Analytic");
-const redisClient = require("../config/redis");
 const cacheService = require("../services/cacheService");
 const mongoose = require("mongoose");
 

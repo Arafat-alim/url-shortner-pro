@@ -2,6 +2,7 @@ const Url = require("../models/Url");
 const Analytic = require("../models/Analytic");
 const redisClient = require("../config/redis");
 const cacheService = require("../services/cacheService");
+const mongoose = require("mongoose");
 
 // Get URL analytics
 exports.getUrlAnalyticsService = async (alias) => {
@@ -95,11 +96,11 @@ exports.getUrlAnalyticsService = async (alias) => {
 };
 
 // Get overall analytics
-exports.getOverallAnalytics = async (userId) => {
+exports.getOverallAnalyticsService = async (userId) => {
   const redisKey = `overallAnalytics:${userId}`;
-  const cachedData = await redisClient.get(redisKey);
+  const cachedData = await cacheService.getFromCache(redisKey);
   if (cachedData) {
-    return JSON.parse(cachedData);
+    return cachedData;
   }
 
   const analytics = await Analytic.aggregate([
@@ -206,7 +207,7 @@ exports.getOverallAnalytics = async (userId) => {
     deviceType: deviceAnalytics,
   };
 
-  await redisClient.setex(redisKey, 600, JSON.stringify(response));
+  await cacheService.setInCache(redisKey, response);
   return response;
 };
 
